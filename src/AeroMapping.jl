@@ -247,7 +247,7 @@ function mapACDMS(t,azi_j,mesh,el,advanceTurb;numAeroTS = 1,alwaysrecalc=true,ou
     end
 
     # return Fexternal, Fdof
-    return ForceValHist[:,1:numAeroTS],ForceDof,Fg_global,ForceDof,ForceValHist[:,1:numAeroTS],z3Dnorm
+    return ForceValHist[:,1:numAeroTS],ForceDof,Fx_base,Fy_base,Fz_base,Mx_base,My_base,Mz_base
 end
 
 # """

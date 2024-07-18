@@ -1016,9 +1016,9 @@ function run_aero_with_deform(aero,deformAero,mesh,el,u_j,inputs,numIterations,t
 
     # println("Calling Aero $(Omega_j*60) RPM $newVinf Vinf")
     deformAero(azi_j;newOmega=Omega_j*2*pi,newVinf,bld_x,bld_z,bld_twist) #TODO: implement deformation induced velocities
-    aeroVals,aeroDOFs = aero(t_i,azi_j)
+    aeroVals,aeroDOFs,Fx_base,Fy_base,Fz_base,Mx_base,My_base,Mz_base = aero(t_i,azi_j)
     # println(maximum(abs.(aeroVals)))
-    return aeroVals,aeroDOFs
+    return aeroVals,aeroDOFs,Fx_base,Fy_base,Fz_base,Mx_base,My_base,Mz_base
 end
 
 function run_aero_with_deformAD15(aero,deformAero,mesh,el,topdata,inputs,t_i)

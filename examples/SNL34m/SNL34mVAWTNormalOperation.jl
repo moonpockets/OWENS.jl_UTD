@@ -252,8 +252,22 @@ feamodel.nlOn = false
 feamodel.analysisType = "ROM"
 inputs.analysisType = "ROM"
 
-eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist = OWENS.run34m(inputs,feamodel,mymesh,myel,
+eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,omegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,
+epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,topFexternal_hist,
+Fx_aero_base_hist,Fy_aero_base_hist,Fz_aero_base_hist,Mx_aero_base_hist,My_aero_base_hist,Mz_aero_base_hist,topdata = OWENS.run34m(inputs,feamodel,mymesh,myel,
 aeroForces,deformAero;steady=false,system,assembly,VTKFilename="$path/vtk/NormalOperation")
+
+println(size(topdata.topsideMass)) # total rotor mass, kg
+println(size(topdata.topsideMOI)) # total rotor moment of inertia
+println(size(topdata.topsideCG)) # total rotor center of gravity location, in meters
+println(size(topdata.Fx_aero_base_hist)) # time domain array of the turbine base force in the x direction, I belive in the hub frame of reference
+println(size(topdata.Fy_aero_base_hist))# time domain array of the turbine base force in the y direction, I belive in the hub frame of reference
+println(size(topdata.Fz_aero_base_hist))# time domain array of the turbine base force in the z direction, I belive in the hub frame of reference
+println(size(topdata.Mx_aero_base_hist))# time domain array of the turbine base moment about the x axis, I belive in the hub frame of reference
+println(size(topdata.My_aero_base_hist))# time domain array of the turbine base moment about the y axis, I belive in the hub frame of reference
+println(size(topdata.Mz_aero_base_hist))# time domain array of the turbine base moment about the z axis, I belive in the hub frame of reference
+println(size(topdata.topFexternal_hist)) # flattened array of the aero forces on each degree of freedom of each node 
+println(size(topdata.FReactionHist)) # flattened array of the reaction forces on each degree of freedom of each node 
 
 # Get stress and "zero" out the loads from the initial 0-RPM
 flatwise_stress1 = zeros(length(eps_x[1,:,1]),length(eps_x[1,1,1:end-1]))

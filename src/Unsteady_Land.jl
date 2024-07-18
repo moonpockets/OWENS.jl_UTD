@@ -78,6 +78,12 @@ mutable struct TopData
     torqueDriveShaft_j
     FReactionsm1
     topFReaction_j
+    Fx_aero_base_hist
+    Fy_aero_base_hist
+    Fz_aero_base_hist
+    Mx_aero_base_hist
+    My_aero_base_hist
+    Mz_aero_base_hist
 end
 """
 
@@ -191,6 +197,12 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     torqueDriveShaft_j = 0.0
     FReactionsm1 = 0.0
     topFReaction_j = 0.0
+    Fx_aero_base_hist = zeros(numTS)
+    Fy_aero_base_hist = zeros(numTS)
+    Fz_aero_base_hist = zeros(numTS)
+    Mx_aero_base_hist = zeros(numTS)
+    My_aero_base_hist = zeros(numTS)
+    Mz_aero_base_hist = zeros(numTS)
     # Package up into data struct
     topdata = TopData(delta_t,numTS,numDOFPerNode,CN2H,t,integrator,integrator_j,topDispOut,
     uHist,epsilon_x_hist,epsilon_y_hist,epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,
@@ -200,7 +212,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     gbDotDot_s,azi_s,Omega_s,OmegaDot_s,genTorque_s,torqueDriveShaft_s,topFexternal,topFexternal_hist,
     rotorSpeedForGenStart,top_rom,topJointTransformTrans,u_sRed,udot_sRed,uddot_sRed,topBC,u_s2,udot_s2,
     uddot_s2,top_invPhi,eta_s,etadot_s,etaddot_s,topsideMass,topsideMOI,topsideCG,u_j,udot_j,uddot_j,azi_j,
-    Omega_j,OmegaDot_j,gb_j,gbDot_j,gbDotDot_j,genTorque_j,torqueDriveShaft_j,FReactionsm1,topFReaction_j)
+    Omega_j,OmegaDot_j,gb_j,gbDot_j,gbDotDot_j,genTorque_j,torqueDriveShaft_j,FReactionsm1,topFReaction_j,
+    Fx_aero_base_hist,Fy_aero_base_hist,Fz_aero_base_hist,Mx_aero_base_hist,My_aero_base_hist,Mz_aero_base_hist)
     
     topModel.jointTransform, topModel.reducedDOFList = OWENSFEA.createJointTransform(topModel.joint,topMesh.numNodes,6) #creates a joint transform to constrain model degrees of freedom (DOF) consistent with joint constraints
 
@@ -400,7 +413,13 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
                             aeroVals = aeroVals[1]
                             aeroDOFs = aeroDOFs[1]
                         else
-                            aeroVals,aeroDOFs = run_aero_with_deform(aero,deformAero,topMesh,topEl,topdata.u_j,inputs,numIterations,t[i],topdata.azi_j,topdata.Omega_j)
+                            aeroVals,aeroDOFs,Fx_base,Fy_base,Fz_base,Mx_base,My_base,Mz_base = run_aero_with_deform(aero,deformAero,topMesh,topEl,topdata.u_j,inputs,numIterations,t[i],topdata.azi_j,topdata.Omega_j)
+                            topdata.Fx_aero_base_hist[i] = Fx_base[1]
+                            topdata.Fy_aero_base_hist[i] = Fy_base[1]
+                            topdata.Fz_aero_base_hist[i] = Fz_base[1]
+                            topdata.Mx_aero_base_hist[i] = Mx_base[1]
+                            topdata.My_aero_base_hist[i] = My_base[1]
+                            topdata.Mz_aero_base_hist[i] = Mz_base[1]
                         end
                     end
                 end
@@ -605,7 +624,8 @@ function Unsteady_Land(inputs;topModel=nothing,topMesh=nothing,topEl=nothing,
     topdata.FReactionHist[1:i,:],topdata.FTwrBsHist[1:i,:],topdata.genTorque[1:i],topdata.genPower[1:i],topdata.torqueDriveShaft[1:i],topdata.uHist[1:i,:],
     topdata.uHist_prp[1:i,:],topdata.epsilon_x_hist[:,:,1:i],topdata.epsilon_y_hist[:,:,1:i],topdata.epsilon_z_hist[:,:,1:i],topdata.kappa_x_hist[:,:,1:i],
     topdata.kappa_y_hist[:,:,1:i],topdata.kappa_z_hist[:,:,1:i],topdata.FPtfmHist[1:i,:],topdata.FHydroHist[1:i,:],topdata.FMooringHist[1:i,:],
-    topdata.topFexternal_hist[1:i,:],topdata.rbDataHist[1:i,:]
+    topdata.topFexternal_hist[1:i,:],topdata.rbDataHist[1:i,:],topdata.Fx_aero_base_hist,topdata.Fy_aero_base_hist,topdata.Fz_aero_base_hist,
+    topdata.Mx_aero_base_hist,topdata.My_aero_base_hist,topdata.Mz_aero_base_hist, topdata
 end
 
 """
@@ -653,7 +673,9 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
 
         t, aziHist,OmegaHist,OmegaDotHist,gbHist,gbDotHist,gbDotDotHist,FReactionHist,
         FTwrBsHist,genTorque,genPower,torqueDriveShaft,uHist,uHist_prp,epsilon_x_hist,epsilon_y_hist,
-        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist = OWENS.Unsteady_Land(inputs;
+        epsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,FPtfmHist,FHydroHist,FMooringHist,
+        topFexternal_hist,rbdata,Fx_aero_base_hist,Fy_aero_base_hist,Fz_aero_base_hist,
+        Mx_aero_base_hist,My_aero_base_hist,Mz_aero_base_hist,topdata = OWENS.Unsteady_Land(inputs;
         topModel=feamodel,topMesh=mymesh,topEl=myel,aero=aeroForces,deformAero,system,assembly)
 
         meanepsilon_z_hist = Statistics.mean(epsilon_z_hist,dims=1)
@@ -718,6 +740,15 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
         torqueDriveShaft = [0.0]
         aziHist = [0.0]
         uHist = [0.0]
+
+        topFexternal_hist = nothing
+        Fx_aero_base_hist = nothing
+        Fy_aero_base_hist = nothing
+        Fz_aero_base_hist = nothing
+        Mx_aero_base_hist = nothing
+        My_aero_base_hist = nothing
+        Mz_aero_base_hist = nothing
+        topdata = nothing
     end
 
 
@@ -766,5 +797,8 @@ function run34m(inputs,feamodel,mymesh,myel,aeroForces,deformAero;steady=true,sy
     # PyPlot.plot(t[1:end-1],kappa_z[2,:,15],":",label="kappa_z2")
     # PyPlot.legend()
 
-    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,meanepsilon_y_hist,meanepsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist
+    return eps_x,eps_z,eps_y,kappa_x,kappa_y,kappa_z,t,FReactionHist,OmegaHist,
+    genTorque,torqueDriveShaft,aziHist,uHist,epsilon_x_hist,meanepsilon_y_hist,
+    meanepsilon_z_hist,kappa_x_hist,kappa_y_hist,kappa_z_hist,topFexternal_hist,
+    Fx_aero_base_hist,Fy_aero_base_hist,Fz_aero_base_hist,Mx_aero_base_hist,My_aero_base_hist,Mz_aero_base_hist,topdata
 end
